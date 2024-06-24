@@ -7,7 +7,6 @@ import argparse
 import textwrap
 import os
 import hsupkg as hp
-#from pandas_plink import read_plink
 from sklearn import linear_model
 import sklearn as skl
 from pysnptools.snpreader import Bed
@@ -29,7 +28,7 @@ def covariance(genoPATH,trait,cohortPATH,index,ssize,covTYPE,workPATH,sex,**kwar
     siblist = pd.DataFrame(pd.concat((sibs[0],sibs[1]))).drop_duplicates().reset_index(drop=True)
     tmp = siblist.set_index(0)
     pr.assign_ancestry(tmp)
-    sibs = tmp[tmp['ANCESTRY']=='white']
+    sibs = tmp[tmp['ANCESTRY']=='EUR']
     sibs = sibs[sibs.index.isin(fam[0])]
     sibs = sibs.sort_index()
     pr.assign_sex(sibs)
@@ -42,13 +41,7 @@ def covariance(genoPATH,trait,cohortPATH,index,ssize,covTYPE,workPATH,sex,**kwar
     s = int(ssize)
     cv = index
 
-    # for c in range(1,23):
-    #     val = pd.read_csv(f'{workPATH}/metrics/val.{covTYPE}.ML_LASSO.size{m}.snps{s}.chrome.{c}.{cv}.txt',header=None,sep='\s+')
-    #     lasso = pd.read_csv(f'{workPATH}/ML/LASSO.{covTYPE}.size{m}.snps{s}.chrome.{c}.betas.{cv}.txt',header=None,sep='\s+')
-            
-    #     max_ind = val.idxmax().values[0]
-    #     if c ==1:
-    #         pred = lasso[lasso[7+max_ind] != 0][[0,1,2,3,4,5,6,7+max_ind]]
+    #block weight coefficients
     coefs = np.load(f'{workPATH}/coefs.npy')
     if len(coefs)==1:
         sind = 0
@@ -94,7 +87,7 @@ def covariance(genoPATH,trait,cohortPATH,index,ssize,covTYPE,workPATH,sex,**kwar
     ssv = 2*pred['beta'].values**2*f*(1-f)
 
 
-
+    #Grch 37 lengths
     clengths = np.array([249250621, 243199373, 198022430, 191154276, 180915260, 
             171115067, 159138663, 146364022, 141213431, 135534747,
             135006516, 133851895, 115169878, 107349540, 102531392,
