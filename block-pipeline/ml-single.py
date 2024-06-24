@@ -18,25 +18,14 @@ def runML(genPATH,trait,index,gwasTYPE,covTYPE,MLTYPE,workPATH,trainSIZE,snpSIZE
     print(workPATH)
     print('cv fold: '+str(index))
     #get training size
-    #trainsizes=np.loadtxt(workPATH+'sets/train_sizes.txt')
-    #m=np.max(trainsizes).astype(int)
     m=trainSIZE
     print('train size: '+str(m))
     # constants
-    #nstep = 190
     nstep = 100
     print(str(nstep)+' steps in ML path')
-    # origininally lamratio = 0.04
-    # lamratio of 0.01 gets hgt predictors to ~25k snps
-    # setting it to 0.04 again...
-    # block lasso i usually set lamratio = 0.005. testing smaller lamratios
     lamratio = 0.0005
-    if trait == 'bioMarkers2.19':
-        lamratio = 0.004
     if gwasTYPE != 'CACO':
         lamratio = 0.001
-    if trait == 'Lipoprotein.A':
-        lamratio = 0.0004
     print('lambda ratio: '+str(lamratio))
     chrm = int(chrm)
     
@@ -61,32 +50,16 @@ def runML(genPATH,trait,index,gwasTYPE,covTYPE,MLTYPE,workPATH,trainSIZE,snpSIZE
             gwasPATH = f'{workPATH}gwas/{gwasTYPE}_size{m}.{index}.PHENO1.glm.logistic.hybrid'
     else:
         gwasPATH = f'{workPATH}gwas/{gwasTYPE}_size{m}.{index}.PHENO1.glm.linear'
-    if MLTYPE =='LOGISTIC' or MLTYPE =='ELOGISTIC':
-        phenPATH = workPATH+'CACO.txt'
-    else:
-        phenPATH = workPATH+covTYPE+'.txt'
+
+    phenPATH = workPATH+covTYPE+'.txt'
     trainPATH = workPATH+'sets/train_size'+str(m)+'.'+str(index)+'.txt'
     # output paths
     if MLTYPE == 'LASSO':
         lamPATH = workPATH+"ML/"+MLTYPE+"."+covTYPE+".size"+str(m)+'.snps'+str(snpSIZE)+'.chrome.'+str(chrm)+".lambdas."+str(index)+".txt"
         betaPATH = workPATH+"ML/"+MLTYPE+"."+covTYPE+".size"+str(m)+'.snps'+str(snpSIZE)+'.chrome.'+str(chrm)+".betas."+str(index)+".txt"
         gapPATH = workPATH+"ML/"+MLTYPE+"."+covTYPE+".size"+str(m)+'.snps'+str(snpSIZE)+'.chrome.'+str(chrm)+".duality-gap."+str(index)+".txt"
-    elif MLTYPE == 'ENET':
-        lamPATH = workPATH+"ML/"+MLTYPE+'.l1_ratio'+str(l1_rat)+"."+covTYPE+".size"+str(m)+".lambdas."+str(index)+".txt"
-        betaPATH = workPATH+"ML/"+MLTYPE+'.l1_ratio'+str(l1_rat)+"."+covTYPE+".size"+str(m)+".betas."+str(index)+".txt"
-        gapPATH = workPATH+"ML/"+MLTYPE+'.l1_ratio'+str(l1_rat)+"."+covTYPE+".size"+str(m)+".duality-gap."+str(index)+".txt"
-    elif MLTYPE == 'LOGISTIC':
-        lamPATH = workPATH+"ML/"+MLTYPE+"."+covTYPE+".size"+str(m)+".lambdas."+str(index)+".txt"
-        betaPATH = workPATH+"ML/"+MLTYPE+"."+covTYPE+".size"+str(m)+".betas."+str(index)+".txt"
-        gapPATH = workPATH+"ML/"+MLTYPE+"."+covTYPE+".size"+str(m)+".duality-gap."+str(index)+".txt"
-    elif MLTYPE == 'ELOGISTIC':
-        lamPATH = workPATH+"ML/"+MLTYPE+'.l1_ratio'+str(l1_rat)+"."+covTYPE+".size"+str(m)+".lambdas."+str(index)+".txt"
-        betaPATH = workPATH+"ML/"+MLTYPE+'.l1_ratio'+str(l1_rat)+"."+covTYPE+".size"+str(m)+".betas."+str(index)+".txt"
-        gapPATH = workPATH+"ML/"+MLTYPE+'.l1_ratio'+str(l1_rat)+"."+covTYPE+".size"+str(m)+".duality-gap."+str(index)+".txt"
+     
     print('load fam/bim/phen/gwas')    
-    #    (bim,fam,G) = read_plink(genPATH)
-    #    fam = pd.DataFrame(fam.values)
-    #    bim = pd.DataFrame(bim.values)
     G = Bed(genPATH,count_A1=False)
     fam = pd.read_csv(genPATH+".fam",header=None,sep=' ')
     bim = pd.read_csv(genPATH+".bim",header=None,sep='\t')
@@ -94,13 +67,8 @@ def runML(genPATH,trait,index,gwasTYPE,covTYPE,MLTYPE,workPATH,trainSIZE,snpSIZE
     phen = pd.read_csv(phenPATH,header=None,sep='\s+',names=['FID','IID','PHENO'])
     # blank,chr, snp, bp, a1, fa, fu, a2 ,x2, P, OR, blank
     gwas = pd.read_csv(gwasPATH,sep='\s+',dtype={'#CHROM':'str'})
-    
-    #Number of SNPs used, standard is 50k
-#     if MLTYPE == 'LOGISTIC' or MLTYPE == 'ELOGISTIC':
-#         top = 10000 #50000
-#     else:
-#         top = snpSIZE
-#     print('using '+str(top)+' SNPs')
+
+    #block size
     top = snpSIZE
     print(f'SNP per chrom: {top}')
     print('compute subsets')
@@ -119,7 +87,7 @@ def runML(genPATH,trait,index,gwasTYPE,covTYPE,MLTYPE,workPATH,trainSIZE,snpSIZE
     subsetP = bim[1].isin(best)
     subsetP = np.stack(pd.DataFrame(list(range(bim.shape[0])))[subsetP].values,axis=1)[0]
 
-    #load training indeces  BE CAREFUL IF LOADING A JULIA TRAIN SET
+    #load training indeces
     train = np.loadtxt(trainPATH,dtype=int)
     train_inds = phen['IID'].isin(train.T[0])
     
@@ -176,74 +144,12 @@ def runML(genPATH,trait,index,gwasTYPE,covTYPE,MLTYPE,workPATH,trainSIZE,snpSIZE
     t = time.time()
     if MLTYPE == 'LASSO':
         path = skl.linear_model.lasso_path(subG,y,n_alphas=nstep,eps=lamratio,n_iter=1500)
-    elif MLTYPE == 'ENET':
-        path = skl.linear_model.enet_path(subG,y,l1_ratio=l1_rat,n_alphas=nstep,eps=lamratio,n_iter=1500)
-    elif MLTYPE == 'LOGISTIC':
-        #n_path=100
-        #lamb=np.logspace(-4,0,n_path)
-        Xy=np.dot(subG.T,y)
-        Xy=Xy[:,np.newaxis]
-        alpha_max=np.sqrt(np.sum(Xy**2,axis=1)).max()/(np.shape(subG)[0])#*l1_rat)
-        alpha_min = 1/(np.shape(subG)[0]*alpha_max)
-        #lamb=np.logspace(np.log10(alpha_max/100), np.log10(alpha_max/2), num=n_alphas)[::-1]    #also might try just using alpha_max as top point
-        lamb=np.logspace(np.log10(alpha_min), np.log10(alpha_min*10), num=n_alphas)[::-1]
-#        print('penalization array: ', lamb)
-        betas=np.zeros((top,len(lamb)))
-        intercept = np.zeros(len(lamb))
-        tol = 2e-2
-        print('Logisit tolerance is: %f' % tol)
-        global t_log_fit
-        def t_log_fit(c, lamb, subG, y): #, betas, intercept): final inputs for version 3
-            penal_log = skl.linear_model.LogisticRegression(C=c,penalty='l1',tol=tol,solver='saga',max_iter=3000,multi_class='auto',n_jobs=-1) #defaul tol=1e-4
-            path = penal_log.fit(subG,y)
-            #for version 3
-            #betas[:,np.where(lamb==c)[0][0]] = path.coef_
-            #intercept[np.where(lamb==c)[0][0]] = path.intercept_
-            return c, path.coef_, path.intercept_
-#version 1
-        #pool = mp.Pool(mp.cpu_count())
-        #for c in lamb:
-        #    tmp = pool.apply_async(t_log_fit,args=(c, lamb, subG, y)) #for c in lamb
-        #    betas[:,np.where(lamb==c)[0][0]] = tmp.get()[1]
-        #    intercept[np.where(lamb==c)[0][0]] = tmp.get()[2]
-        #pool.close()
-        #pool.join()
 
-#Version 2  THIS SEEMS TO BE THE VERSION THAT WORKS!!!!!!
-        print('Number of CPUs in use: ', mp.cpu_count())
-        pool = mp.Pool(mp.cpu_count()-1,maxtasksperchild=1000)
-        fits = [pool.apply_async(t_log_fit,args=(c, lamb, subG, y)) for c in lamb]
-        pool.close()
-        pool.join()
-        for i in range(0,len(lamb)):
-            betas[:,np.where(lamb==fits[i].get()[0])[0][0]] = fits[i].get()[1]
-            intercept[np.where(lamb==fits[i].get()[0])[0][0]] = fits[i].get()[2]
-            
-#Version 3
-        #pool = mp.Pool(mp.cpu_count())
-        #[pool.apply_async(t_log_fit,args=(c, lamb, penal_log, z_matrix,wp_df, betas, intercept)) for c in lamb]
-        #pool.close()
-        #pool.join
-#old version
-#        for c in lamb: 
-#            penal_log=skl.linear_model.LogisticRegression(C=c,penalty='l1',tol=1e-4,solver='saga',multi_class='auto',n_jobs=-1)
-#            path = penal_log.fit(subG,y)
-#            betas[:,np.where(lamb==c)[0][0]] = path.coef_
-#            intercept[np.where(lamb==c)[0][0]] = path.intercept_
-    elif MLTYPE == 'ELOGISTIC':
-        n_path=100
-        lamb=np.logspace(-4,0,n_path)
-        betas=np.zeros((top,len(lamb)))
-        intercept = np.zeros(len(lamb))
-        for c in lamb:
-            path = skl.linear_model.LogisticRegression(C=c,penalty='elasticnet',tol=1e-4,solver='saga',l1_ratio=l1_rat,multi_class='auto',n_jobs=-1).fit(subG,y)
-            betas[:,np.where(lamb==c)[0][0]] = path.coef_
-            intercept[np.where(lamb==c)[0][0]] = path.intercept_
     elapsed = time.time() - t
     print(str(MLTYPE)+" time:",flush=True)
     print(elapsed)
     
-    if MLTYPE == 'LASSO' or MLTYPE == 'ENET': #only the lasso and enet get a gap
+    if MLTYPE == 'LASSO': 
         betas = path[1]
         lamb = path[0]
         gap = path[2]
