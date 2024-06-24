@@ -11,8 +11,8 @@ from functools import reduce
 # ----- Filename constants -----
 DATA_FILE_EXT = ".csv"
 GENO_BASENAME = \
-"/mnt/research/UKBB/hsuGroup/ukb500/genotypes/calls.merged/ukb500.calls.onlyqc"
-PLINK_SCRIPT = "/mnt/home/lellolou/programs/plink1.9/plink"
+"/FULL/PATH/TO/BED/FILES"
+PLINK_SCRIPT = "/FULL/PATH/TO/PLINK/INSTALLATION"
 
 GWAS_BASE = "gwas."
 GWAS_STUDY_PHEN_PLACEHOLDER_NAME = "gwasPhen.{trait}.{cohort}_{index}.csv"
