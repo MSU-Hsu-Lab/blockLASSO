@@ -15,10 +15,12 @@ mkdir -p $OUTDIR
 genoPATH='/mnt/research/UKBB/hsuGroup/ukb500/genotypes/calls.merged/ukb500.calls.onlyqc'
 
 gwasTYPE=$5
+#specify what covariates were used (for file management/naming conventions)
 covTYPE='PCA_YOB_SEX_reg'
 ML='LASSO'
 echo $ML
 
+#specify whether you are using plink1.x (=1) or plink2.x (=2)
 plinkversion=2
 echo 'plink version $plinkversion'
 
